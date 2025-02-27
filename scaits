@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaits</title>
+    <style>
+        /* Estilos Gerais */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Seções */
+        .section {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* Cabeçalho */
+        header {
+            background-color: #1f1f1f;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .back-arrow {
+            cursor: pointer;
+            font-size: 24px;
+            transition: color 0.3s;
+            padding: 5px 10px;
+        }
+
+        .back-arrow:hover {
+            color: #1DB954;
+        }
+
+        /* Estilos do Login */
+        .welcome-container {
+            text-align: center;
+            background-color: #1f1f1f;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            margin: auto;
+        }
+
+        h1 {
+            color: #1DB954;
+            margin-bottom: 20px;
+        }
+
+        /* Estilos dos Contatos */
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+        }
+
+        .search-bar {
+            margin: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .search-bar input {
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+        }
+
+        .contacts-list {
+            margin: 0 auto;
+            width: 90%;
+            max-width: 600px;
+            background-color: #1f1f1f;
+            border-radius: 10px;
+            padding: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+
+        .contact-item:hover {
+            background-color: #1a1a1a;
+        }
+
+        .contact-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .no-contacts {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+        }
+
+        /* Estilos do Chat */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 60%;
+        }
+
+        .sent {
+            align-self: flex-end;
+            background-color: #1DB954;
+        }
+
+        .received {
+            align-self: flex-start;
+            background-color: #333;
+        }
+
+        .input-bar {
+            display: flex;
+            padding: 10px;
+            background-color: #1f1f1f;
+            gap: 10px;
+        }
+
+        .input-bar input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #1DB954;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Seção de Login -->
+    <div id="loginSection" class="section active">
+        <div class="welcome-container">
+            <h1>Bem-vindo ao Scaits</h1>
+            <p>Crie seu cadastro para começar</p>
+            <form onsubmit="handleLogin(event)">
+                <input type="text" id="username" placeholder="Seu Nome" required>
+                <input type="number" placeholder="Código Ex: 259" required>
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Seção de Contatos -->
+    <div id="contactsSection" class="section">
+        <header>
+            <span class="back-arrow" onclick="showSection('loginSection')">←</span>
+            Lista de Contatos
+            <img src="https://via.placeholder.com/40" class="profile-icon" onclick="goToProfile()">
+        </header>
+        <div class="search-bar">
+            <input id="searchInput" type="text" placeholder="Pesquisar contatos..." onkeyup="filterContacts()">
+        </div>
+        <div class="contacts-list" id="contactsList"></div>
+    </div>
+
+    <!-- Seção de Chat -->
+    <div id="chatSection" class="section">
+        <header>
+            <span class="back-arrow" onclick="showSection('contactsSection')">←</span>
+            <span id="chatHeader"></span>
+        </header>
+        <div class="messages" id="messages"></div>
+        <div class="input-bar">
+            <input id="messageInput" type="text" placeholder="Digite sua mensagem...">
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script>
+        // Dados da aplicação
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGAWhXkTZnelMR_iaZ14Y0Nha-9_D54GQ",
+            authDomain: "projeto-scaits.firebaseapp.com",
+            projectId: "projeto-scaits",
+            storageBucket: "projeto-scaits.firebasestorage.app",
+            messagingSenderId: "217337166065",
+            appId: "1:217337166065:web:d6adede2ece42578ddd150",
+            measurementId: "G-6NS9JC3TT2"
+        };
+
+        // Inicializa o Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Dados de usuários
+        let users = [];
+        let loggedInUser = '';
+
+        // Navegação entre seções
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Login
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            loggedInUser = username;
+            localStorage.setItem('loggedInUser', loggedInUser);
+
+            // Criar conta (simulação)
+            auth.createUserWithEmailAndPassword(username + "@scaits.com", "123456").then(() => {
+                users = [
+                    { name: "Maria", profilePic: "https://via.placeholder.com/50" },
+                    { name: "Carlos", profilePic: "https://via.placeholder.com/50" },
+                    { name: loggedInUser, profilePic: "https://via.placeholder.com/50" }
+                ];
+                showSection('contactsSection');
+                filterContacts();
+            }).catch(error => {
+                console.error("Erro ao criar conta: ", error);
+            });
+        }
+
+        // Contatos
+        function filterContacts() {
+            const searchInput = document.getElementById("searchInput").value.toLowerCase();
+            const contactsList = document.getElementById("contactsList");
+            contactsList.innerHTML = "";
+
+            const filteredUsers = users.filter(user => 
+                user.name.toLowerCase().includes(searchInput)
+            );
+
+            if (filteredUsers.length > 0) {
+                filteredUsers.forEach(user => {
+                    const contactItem = document.createElement("div");
+                    contactItem.className = "contact-item";
+                    contactItem.innerHTML = 
+                        `<img src="${user.profilePic}" alt="${user.name}">
+                        <span>${user.name}</span>`;
+                    contactItem.onclick = () => openChat(user.name);
+                    contactsList.appendChild(contactItem);
+                });
+            } else {
+                contactsList.innerHTML = '<div class="no-contacts">Nenhum contato encontrado.</div>';
+            }
+        }
+
+        // Chat
+        function openChat(userName) {
+            document.getElementById('chatHeader').textContent = "Conversando com " + userName;
+            document.getElementById('messages').innerHTML = '';
+            showSection('chatSection');
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            if (messageText) {
+                const messagesContainer = document.getElementById('messages');
+                const sentMessage = document.createElement('div');
+                sentMessage.className = 'message sent';
+                sentMessage.textContent = messageText;
+                messagesContainer.appendChild(sentMessage);
+                messageInput.value = '';
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        // Perfil
+        function goToProfile() {
+            alert("Perfil do usuário: " + loggedInUser);
+        }
+    </script>
+</body>
+</html>
